@@ -2,14 +2,19 @@ import io.restassured.RestAssured;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class SomeHttpRequests {
     //https://playground.learnqa.ru/api/map
+
     @Test
-    public void answer() {
+    public void hello() {
         /*This API call says hello by name you specify
         Params:
             @ name : string - Default "someone"
@@ -33,8 +38,9 @@ public class SomeHttpRequests {
         response.prettyPrint();
     }
 
-    @Test
-    public void answerJson() {
+    @ParameterizedTest
+    @ValueSource(strings = {"", "Kirill", "Ksenia", "Kerri"})
+    public void helloJson(String name) {
         /*
         В р-те выполнения кода выше получаем ответ:
         {
@@ -43,7 +49,10 @@ public class SomeHttpRequests {
         Значит можно сразу проверить значение по ключу "answer" в Json, который возвращается в кач-ве ответа.
         */
         Map<String, String> params = new HashMap<>();
-        params.put("name", "Kirill");
+
+        if(name.length() > 0) {
+            params.put("name", name);
+        }
 
         JsonPath response = RestAssured
                 .given()
@@ -53,6 +62,13 @@ public class SomeHttpRequests {
                 .jsonPath();
 
         String answer = response.get("answer");
+
+        if(name.length() == 0) {
+            name = "someone";
+        }
+
+        assertEquals("Hello, " + name, answer, "The answer is not expected");
+
         System.out.println(answer);
     }
 
