@@ -14,7 +14,6 @@ public class UserRegisterTest extends BaseTestCase {
 
     @Test
     public void createUserWithExistingEmail() {
-        String email = "vinkotov@example.com";
         /* POST - Create user
         Params:
             @ username : string
@@ -24,12 +23,11 @@ public class UserRegisterTest extends BaseTestCase {
             @ password : string
             https://playground.learnqa.ru/api/user/
          */
+        String email = "vinkotov@example.com";
         Map<String, String> userData = new HashMap<>();
         userData.put("email", email);
-        userData.put("password", "123");
-        userData.put("username", "learnqa");
-        userData.put("firstName", "learnqa");
-        userData.put("lastName", "learnqa");
+
+        userData = DataGenerator.getRegistrationData(userData);
 
         Response response = RestAssured
                 .given()
@@ -44,14 +42,7 @@ public class UserRegisterTest extends BaseTestCase {
 
     @Test
     public void createUserSuccessfullyWithRandomEmail() {
-        String email = DataGenerator.getRandomEmail();
-
-        Map<String, String> userData = new HashMap<>();
-        userData.put("email", email);
-        userData.put("password", "123");
-        userData.put("username", "learnqa");
-        userData.put("firstName", "learnqa");
-        userData.put("lastName", "learnqa");
+        Map<String, String> userData = DataGenerator.getRegistrationData();
 
         Response response = RestAssured
                 .given()

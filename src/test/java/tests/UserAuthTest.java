@@ -1,11 +1,14 @@
 package tests;
 
-import io.restassured.RestAssured;
+import io.qameta.allure.Description;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
 import io.restassured.response.Response;
-import io.restassured.specification.RequestSpecification;
+import lib.ApiCoreRequests;
 import lib.Assertions;
 import lib.BaseTestCase;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -13,14 +16,14 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
+@Epic("Authorisation cases")
+@Feature("Authorisation")
 public class UserAuthTest extends BaseTestCase {
 
     String cookie;
-    String header;
+    String token;
     int userId;
+    private final ApiCoreRequests apiCoreRequests = new ApiCoreRequests();
 
     @BeforeEach
     public void loginUser() {
@@ -35,54 +38,49 @@ public class UserAuthTest extends BaseTestCase {
         authData.put("email", "vinkotov@example.com");
         authData.put("password", "1234");
 
-        Response response = RestAssured
-                .given()
-                .body(authData)
-                .when()
-                .post("https://playground.learnqa.ru/api/user/login")
-                .andReturn();
+        Response response = apiCoreRequests
+                .postRequest("https://playground.learnqa.ru/api/user/login", authData);
 
-        assertEquals(200, response.getStatusCode(), "Unexpected status code");
+        Assertions.assertResponseCodeEquals(response, 200);
 
         cookie = getCookie(response, "auth_sid");
-        header = getHeader(response, "x-csrf-token");
+        token = getHeader(response, "x-csrf-token");
 
         userId = getIntFromJson(response, "user_id");
-        assertTrue(userId > 0, "User id should be greater then zero");
+        Assertions.assertFieldValueMoreThenValue(response, userId, 0);
     }
 
     @Test
+    @Description("This test successfully authorize user by email and password")
+    @DisplayName("Test positive auth user")
     public void authUser() {
         /*
         Get user id you are authorizes as OR get 0 if not authorized
         https://playground.learnqa.ru/api/user/auth
          */
-        Response responseCheckAuth = RestAssured
-                .given()
-                .header("x-csrf-token", header)
-                .cookie("auth_sid", cookie)
-                .when()
-                .get("https://playground.learnqa.ru/api/user/auth")
-                .andReturn();
+        Response response = apiCoreRequests
+                .getRequest("https://playground.learnqa.ru/api/user/auth", token, cookie);
 
-        Assertions.assertIntValFromJsonByName(responseCheckAuth, "user_id", userId);
+        Assertions.assertIntValFromJsonByName(response, "user_id", userId);
     }
 
+    @Description("This test checks authorisation status w/o sending auth cookie or token")
+    @DisplayName("Test negative auth user")
     @ParameterizedTest
     @ValueSource(strings = {"cookie", "headers"})
     public void negativeAuthUser(String condition) {
-        RequestSpecification spec = RestAssured.given();
-        spec.baseUri("https://playground.learnqa.ru/api/user/auth");
+        Response response;
 
-        if(condition.equals("cookie")) {
-            spec.cookie("auth_sid", cookie);
-        } else if(condition.equals("headers")) {
-            spec.header("headers", header);
+        if (condition.equals("cookie")) {
+            response = apiCoreRequests.getRequestWithCookie("https://playground.learnqa.ru/api/user/auth", cookie);
+        } else if (condition.equals("headers")) {
+            response = apiCoreRequests.getRequestWithToken("https://playground.learnqa.ru/api/user/auth", token);
         } else {
             throw new IllegalArgumentException("Condition value '" + condition + "' is not known");
         }
 
-        Response responseForCheck = spec.get().andReturn();
-        Assertions.assertIntValFromJsonByName(responseForCheck, "user_id", 0);
+        Assertions.assertIntValFromJsonByName(response, "user_id", 0);
     }
 }
+
+// C:\Users\kiril\IdeaProjects\API_studying>allure serve allure-results/

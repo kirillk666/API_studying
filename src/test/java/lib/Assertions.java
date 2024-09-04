@@ -5,6 +5,7 @@ import io.restassured.response.Response;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Assertions {
 
@@ -12,6 +13,13 @@ public class Assertions {
         response.then().assertThat().body("$", hasKey(name));
 
         int value = response.jsonPath().getInt(name);
+        assertEquals(expectedValue, value, "JSON value is not equal to expected value");
+    }
+
+    public static void assertStringValFromJsonByName(Response response, String name, String expectedValue) {
+        response.then().assertThat().body("$", hasKey(name));
+
+        String value = response.jsonPath().getString(name);
         assertEquals(expectedValue, value, "JSON value is not equal to expected value");
     }
 
@@ -35,5 +43,9 @@ public class Assertions {
 
     public static void assertJsonHasNotField(Response response, String unexpectedFiledName) {
         response.then().assertThat().body("$", not(hasKey(unexpectedFiledName)));
+    }
+
+    public static void assertFieldValueMoreThenValue(Response response, int fieldName, int val) {
+        assertTrue(fieldName > val, "User id should be greater then '" + val + "'");
     }
 }
